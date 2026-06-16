@@ -113,6 +113,11 @@ class FinancialTip(db.Model):
     icon = db.Column(db.String(50), nullable=True)
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
 
+with app.app_context():
+    if not os.environ.get('VERCEL'):
+        os.makedirs(os.path.join(basedir, 'instance'), exist_ok=True)
+    db.create_all()
+
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, int(user_id))
@@ -430,7 +435,4 @@ def education():
 
 
 if __name__ == '__main__':
-    with app.app_context():
-        os.makedirs(os.path.join(basedir, 'instance'), exist_ok=True)
-        db.create_all()
     app.run(debug=True)
