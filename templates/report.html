@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- SheetJS Library for Excel Export -->
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+<!-- Header &amp; Filter -->
+<div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div class="flex items-center gap-4">
+        <div class="w-14 h-14 bg-brand-600/10 text-brand-600 rounded-2xl flex items-center justify-center shadow-inner">
+            <i class="ph-duotone ph-chart-pie text-3xl"></i>
+        </div>
+        <div>
+            <h2 class="text-2xl font-bold text-slate-800">Analisis Keuangan</h2>
+            <p class="text-slate-500 mt-1">Laporan komprehensif periode {{ month_filter }}</p>
+        </div>
+    </div>
+    
+    <div class="bg-white p-2.5 rounded-2xl shadow-soft border border-slate-100 flex items-center gap-2">
+        <form action="{{ url_for('report') }}" method="GET" class="flex items-center gap-2">
+            <div class="relative group">
+                <i class="ph ph-calendar-blank absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-500 transition-colors"></i>
+                <input type="month" name="month" value="{{ month_filter }}"
+                    class="pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all outline-none text-sm text-slate-700 font-medium w-44">
+            </div>
+            <button type="submit" class="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-all shadow-md shadow-slate-200 active:scale-95">
+                Terapkan
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Key Stats Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
+    <!-- Total Income -->
+    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-soft relative transition-all hover:shadow-xl hover:shadow-emerald-500/5 group">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4 transition-transform group-hover:scale-110">
+            <i class="ph-duotone ph-arrow-circle-up-right text-2xl"></i>
+        </div>
+        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Pemasukan</p>
+        <h4 class="text-xl font-extrabold text-slate-800">{{ total_income|rupiah }}</h4>
+        <div class="absolute top-6 right-6 opacity-[0.03]">
+            <i class="ph ph-trend-up text-5xl"></i>
+        </div>
+    </div>
+
+    <!-- Total Expense -->
+    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-soft relative transition-all hover:shadow-xl hover:shadow-rose-500/5 group">
+        <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mb-4 transition-transform group-hover:scale-110">
+            <i class="ph-duotone ph-arrow-circle-down-left text-2xl"></i>
+        </div>
+        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Pengeluaran</p>
+        <h4 class="text-xl font-extrabold text-slate-800">{{ total_expense|rupiah }}</h4>
+        <div class="absolute top-6 right-6 opacity-[0.03]">
+            <i class="ph ph-trend-down text-5xl"></i>
+        </div>
+    </div>
+
+    <!-- Net Balance -->
+    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-soft relative transition-all hover:shadow-xl hover:shadow-blue-500/5 group">
+        <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4 transition-transform group-hover:scale-110">
+            <i class="ph-duotone ph-bank text-2xl"></i>
+        </div>
+        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Selisih</p>
+        <h4 class="text-xl font-extrabold {{ 'text-emerald-600' if balance >= 0 else 'text-rose-600' }}">
+            {{ balance|rupiah }}
+        </h4>
+        <div class="absolute top-6 right-6 opacity-[0.03]">
+            <i class="ph ph-scales text-5xl"></i>
+        </div>
+    </div>
+
+    <!-- Avg Expense -->
+    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-soft relative transition-all hover:shadow-xl hover:shadow-amber-500/5 group">
+        <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4 transition-transform group-hover:scale-110">
+            <i class="ph-duotone ph-lightning text-2xl"></i>
+        </div>
+        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Rata-rata/Hari</p>
+        <h4 class="text-xl font-extrabold text-slate-800">{{ avg_daily_expense|rupiah }}</h4>
+        <div class="absolute top-6 right-6 opacity-[0.03] text-amber-900">
+            <i class="ph ph-calculator text-5xl"></i>
+        </div>
+    </div>
+
+    <!-- Total Trans -->
+    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-soft relative transition-all hover:shadow-xl hover:shadow-purple-500/5 group">
+        <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mb-4 transition-transform group-hover:scale-110">
+            <i class="ph-duotone ph-stack text-2xl"></i>
+        </div>
+        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Transaksi</p>
+        <h4 class="text-xl font-extrabold text-slate-800">{{ total_trans }}</h4>
+        <div class="absolute top-6 right-6 opacity-[0.03]">
+            <i class="ph ph-list-numbers text-5xl"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+    <!-- Bar Chart -->
+    <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-soft">
+        <div class="flex items-center justify-between mb-8">
+            <h3 class="text-lg font-bold text-slate-800">Pemasukan vs Pengeluaran</h3>
+            <div class="flex gap-4 text-xs font-bold">
+                <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> In</div>
+                <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Out</div>
+            </div>
+        </div>
+        <div class="h-[350px]">
+            <canvas id="reportBarChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Line Chart -->
+    <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-soft">
+        <div class="flex items-center justify-between mb-8">
+            <h3 class="text-lg font-bold text-slate-800">Pertumbuhan Saldo</h3>
+            <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                <i class="ph-duotone ph-chart-line text-xl"></i>
+            </div>
+        </div>
+        <div class="h-[350px]">
+            <canvas id="reportLineChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Action Section -->
+<div class="bg-slate-900 rounded-[2.5rem] p-10 text-white relative overflow-hidden flex flex-col lg:flex-row items-center justify-between gap-8 shadow-2xl shadow-slate-900/10">
+    <div class="z-10">
+        <h3 class="text-2xl font-bold mb-3">Ekspor Laporan &amp; Evaluasi</h3>
+        <p class="text-slate-400 max-w-lg">
+            Unduh data keuangan Anda dalam format Excel untuk analisis lebih mendalam di komputer Anda.
+        </p>
+    </div>
+    
+    <div class="flex gap-4 z-10">
+        <button id="exportExcelBtn" class="px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold transition-all flex items-center gap-3">
+            <i class="ph-duotone ph-file-xls text-2xl"></i>
+            Simpan Excel
+        </button>
+        <button onclick="window.print()" class="px-8 py-4 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-bold transition-all border border-white/10">
+            Cetak PDF
+        </button>
+    </div>
+    
+    <!-- Data container for JavaScript (to avoid linting errors) -->
+    <div id="report-data" class="hidden" 
+         data-month="{{ month_filter }}"
+         data-income="{{ total_income }}"
+         data-expense="{{ total_expense }}"
+         data-balance="{{ balance }}"
+         data-labels='{{ labels|tojson }}'
+         data-income-data='{{ income_data|tojson }}'
+         data-expense-data='{{ expense_data|tojson }}'
+         data-trend-data='{{ trend_data|tojson }}'
+         data-transactions='{{ trans_json|tojson }}'>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    // Constants from Backend
+    const reportData = document.getElementById('report-data').dataset;
+    const chartLabels = JSON.parse(reportData.labels);
+    const incomeData = JSON.parse(reportData.incomeData);
+    const expenseData = JSON.parse(reportData.expenseData);
+    const trendData = JSON.parse(reportData.trendData);
+    const transactions = JSON.parse(reportData.transactions);
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Chart Defaults
+        if (typeof Chart !== 'undefined') {
+            Chart.defaults.font.family = "'Inter', sans-serif";
+            Chart.defaults.color = '#94a3b8';
+
+            // Bar Chart
+            const barCtx = document.getElementById('reportBarChart').getContext('2d');
+            new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: chartLabels,
+                    datasets: [
+                        { label: 'Pemasukan', data: incomeData, backgroundColor: '#10b981', borderRadius: 6 },
+                        { label: 'Pengeluaran', data: expenseData, backgroundColor: '#f43f5e', borderRadius: 6 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { display: false } },
+                        x: { grid: { display: false }, border: { display: false } }
+                    }
+                }
+            });
+
+            // Line Chart
+            const lineCtx = document.getElementById('reportLineChart').getContext('2d');
+            const grad = lineCtx.createLinearGradient(0, 0, 0, 400);
+            grad.addColorStop(0, 'rgba(59, 130, 246, 0.1)');
+            grad.addColorStop(1, 'rgba(59, 130, 246, 0)');
+
+            new Chart(lineCtx, {
+                type: 'line',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        label: 'Saldo',
+                        data: trendData,
+                        borderColor: '#3b82f6',
+                        borderWidth: 3,
+                        fill: true,
+                        backgroundColor: grad,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: '#f1f5f9' }, border: { display: false } },
+                        x: { grid: { display: false }, border: { display: false } }
+                    }
+                }
+            });
+        }
+    });
+
+    // Excel Export
+    document.getElementById('exportExcelBtn').addEventListener('click', function() {
+        if (typeof XLSX === 'undefined') {
+            alert('Gagal memuat library Excel.');
+            return;
+        }
+        
+        if (transactions.length === 0) {
+            alert('Tidak ada data transaksi.');
+            return;
+        }
+
+        const wb = XLSX.utils.book_new();
+        const wsDetail = XLSX.utils.json_to_sheet(transactions);
+        XLSX.utils.book_append_sheet(wb, wsDetail, "Daftar Transaksi");
+
+        const summary = [
+            ["Laporan Keuangan", reportData.month],
+            ["Total Pemasukan", parseFloat(reportData.income)],
+            ["Total Pengeluaran", parseFloat(reportData.expense)],
+            ["Saldo Akhir", parseFloat(reportData.balance)]
+        ];
+        const wsSummary = XLSX.utils.aoa_to_sheet(summary);
+        XLSX.utils.book_append_sheet(wb, wsSummary, "Ringkasan");
+
+        XLSX.writeFile(wb, `Laporan_${reportData.month}.xlsx`);
+    });
+})();
+</script>
+{% endblock %}

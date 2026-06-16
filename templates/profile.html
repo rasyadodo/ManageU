@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Profil Saya</h1>
+    <p class="text-slate-500 mt-1">Kelola informasi pribadi dan pengaturan akun Anda.</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Left Column: Profile Card -->
+    <div class="lg:col-span-1">
+        <div class="bg-white rounded-3xl shadow-soft border border-slate-100 overflow-hidden sticky top-8">
+            <div class="h-32 bg-gradient-to-br from-brand-500 to-emerald-600"></div>
+            <div class="px-6 pb-8 -mt-16 text-center">
+                <div class="relative inline-block group">
+                    <div class="w-32 h-32 rounded-full border-4 border-white shadow-xl overflow-hidden bg-slate-100 mx-auto transition-transform duration-300 group-hover:scale-105">
+                        {% if current_user.profile_image and current_user.profile_image != 'default.png' %}
+                            <img src="{{ url_for('static', filename='uploads/profiles/' + current_user.profile_image) }}" alt="Profile" class="w-full h-full object-cover">
+                        {% else %}
+                            <div class="w-full h-full flex items-center justify-center text-4xl font-bold text-brand-600 bg-brand-50">
+                                {{ current_user.name[0]|upper }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <label for="profile_image_input" class="absolute bottom-1 right-1 w-10 h-10 bg-white rounded-full shadow-lg border border-slate-100 flex items-center justify-center text-brand-600 cursor-pointer hover:bg-brand-50 transition-colors">
+                        <i class="ph ph-camera text-xl"></i>
+                    </label>
+                </div>
+                
+                <h2 class="text-xl font-bold text-slate-900 mt-4">{{ current_user.name }}</h2>
+                <p class="text-slate-500 text-sm">{{ current_user.email }}</p>
+                
+                <div class="mt-6 flex flex-wrap justify-center gap-2">
+                    <span class="px-3 py-1 bg-brand-50 text-brand-600 rounded-full text-xs font-semibold border border-brand-100">
+                        Member
+                    </span>
+                    <span class="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-xs font-semibold border border-emerald-100">
+                        Aktif
+                    </span>
+                </div>
+
+                <div class="mt-8 grid grid-cols-2 gap-4 border-t border-slate-50 pt-8">
+                    <div class="text-center">
+                        <span class="block text-xl font-bold text-slate-900">{{ total_transactions }}</span>
+                        <span class="text-xs text-slate-400 uppercase tracking-wider font-medium">Transaksi</span>
+                    </div>
+                    <div class="text-center border-l border-slate-50">
+                        <span class="block text-xl font-bold text-slate-900">{{ total_wishlists }}</span>
+                        <span class="text-xs text-slate-400 uppercase tracking-wider font-medium">Wishlist</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Settings Form -->
+    <div class="lg:col-span-2">
+        <div class="bg-white rounded-3xl shadow-soft border border-slate-100 p-8">
+            <form action="{{ url_for('profile') }}" method="POST" enctype="multipart/form-data">
+                <input type="file" name="profile_image" id="profile_image_input" class="hidden" onchange="previewImage(this)">
+                
+                <div class="space-y-8">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+                            <i class="ph-duotone ph-user-circle text-brand-500 text-2xl"></i>
+                            Informasi Pribadi
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <label class="text-sm font-semibold text-slate-700 ml-1">Nama Lengkap</label>
+                                <div class="relative group">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-brand-500 transition-colors">
+                                        <i class="ph ph-user"></i>
+                                    </div>
+                                    <input type="text" name="name" value="{{ current_user.name }}" required
+                                        class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-sm font-medium"
+                                        placeholder="Nama Lengkap">
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="text-sm font-semibold text-slate-700 ml-1">Alamat Email</label>
+                                <div class="relative group">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-brand-500 transition-colors">
+                                        <i class="ph ph-envelope"></i>
+                                    </div>
+                                    <input type="email" name="email" value="{{ current_user.email }}" required
+                                        class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-sm font-medium"
+                                        placeholder="email@contoh.com">
+                                </div>
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="text-sm font-semibold text-slate-700 ml-1">Nomor Telepon</label>
+                                <div class="relative group">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-brand-500 transition-colors">
+                                        <i class="ph ph-phone"></i>
+                                    </div>
+                                    <input type="text" name="phone" value="{{ current_user.phone or '' }}"
+                                        class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-sm font-medium"
+                                        placeholder="+62 812 XXXX XXXX">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+                            <i class="ph-duotone ph-identification-card text-brand-500 text-2xl"></i>
+                            Tentang Saya
+                        </h3>
+                        
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-slate-700 ml-1">Bio Singkat</label>
+                            <textarea name="bio" rows="4" 
+                                class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-sm font-medium"
+                                placeholder="Ceritakan sedikit tentang Anda...">{{ current_user.bio or '' }}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 flex justify-end gap-3">
+                        <button type="reset" class="px-6 py-3 text-sm font-bold text-slate-500 hover:bg-slate-50 rounded-2xl transition-colors">
+                            Batal
+                        </button>
+                        <button type="submit" class="px-8 py-3 bg-gradient-to-r from-brand-600 to-emerald-500 text-white rounded-2xl font-bold text-sm shadow-lg shadow-brand-500/30 hover:shadow-brand-500/40 hover:-translate-y-0.5 transition-all">
+                            Simpan Perubahan
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // You could show a preview here if desired, 
+                // but since it's an auto-submit or manual save, 
+                // we'll just let the user know they selected a file
+                const toast = document.createElement('div');
+                toast.className = 'fixed top-5 right-5 z-50 bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl shadow-xl border border-brand-100 flex items-center gap-4 animate-slide-in';
+                toast.innerHTML = `
+                    <div class="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-600">
+                        <i class="ph ph-image text-2xl"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-sm font-semibold">Foto Terpilih</span>
+                        <span class="text-xs text-slate-500">Klik "Simpan Perubahan" untuk memperbarui.</span>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 4000);
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
+
+<style>
+    @keyframes slide-in {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    .animate-slide-in {
+        animation: slide-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+</style>
+{% endblock %}

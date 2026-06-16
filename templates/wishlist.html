@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Header &amp; Add Button -->
+<div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div class="flex items-center gap-4">
+        <div class="w-14 h-14 bg-brand-600/10 text-brand-600 rounded-2xl flex items-center justify-center shadow-inner">
+            <i class="ph-duotone ph-target text-3xl"></i>
+        </div>
+        <div>
+            <h2 class="text-2xl font-bold text-slate-800">Wishlist &amp; Target</h2>
+            <p class="text-slate-500 mt-1">Rencanakan masa depan finansialmu</p>
+        </div>
+    </div>
+    
+    <button onclick="document.getElementById('addWishlistModal').classList.remove('hidden')" 
+        class="bg-slate-900 text-white px-6 py-3.5 rounded-2xl font-bold flex items-center gap-3 hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 active:scale-95">
+        <i class="ph ph-plus-circle text-xl"></i>
+        Tambah Target Baru
+    </button>
+</div>
+
+<!-- Wishlist Grid -->
+{% if wishlists %}
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    {% for item in wishlists %}
+    <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-soft overflow-hidden group hover:shadow-2xl hover:shadow-brand-500/5 transition-all duration-500">
+        <div class="p-8">
+            <div class="flex justify-between items-start mb-6">
+                <div class="p-3 rounded-2xl bg-slate-50 text-slate-600 group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors">
+                    <i class="ph-duotone ph-gift text-2xl"></i>
+                </div>
+                <div class="flex flex-col items-end">
+                    <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider 
+                        {% if item.status == 'Selesai' %}bg-emerald-100 text-emerald-700
+                        {% elif item.status == 'Terlambat' or item.status == 'Mendesak' %}bg-rose-100 text-rose-700
+                        {% elif item.status == 'Awal' %}bg-amber-100 text-amber-700
+                        {% else %}bg-blue-100 text-blue-700{% endif %}">
+                        {{ item.status }}
+                    </span>
+                    <span class="text-xs text-slate-400 mt-2 font-medium italic">
+                        {% if item.days_left > 0 %}Sisa {{ item.days_left }} hari lagi
+                        {% elif item.days_left == 0 %}Waktunya Hari Ini!
+                        {% else %}Lewat {{ item.days_left|abs }} hari{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <h3 class="text-xl font-bold text-slate-800 mb-2 truncate">{{ item.obj.title }}</h3>
+            <div class="flex items-baseline gap-1.5 mb-6">
+                <span class="text-2xl font-black text-slate-900">{{ item.obj.current_amount|rupiah }}</span>
+                <span class="text-sm text-slate-400 font-medium">/ {{ item.obj.target_amount|rupiah }}</span>
+            </div>
+
+            <!-- Advice Box -->
+            <div class="mb-6 p-4 rounded-2xl {% if item.status == 'Selesai' %}bg-emerald-50 text-emerald-700 border border-emerald-100{% else %}bg-slate-50 text-slate-600 border border-slate-100{% endif %}">
+                <p class="text-xs font-bold leading-relaxed">
+                    <i class="ph-duotone ph-lightbulb mr-1"></i>
+                    {{ item.advice }}
+                </p>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="mb-6">
+                <div class="flex justify-between text-[10px] font-black uppercase tracking-tighter mb-2">
+                    <span class="text-slate-400">Pencapaian Target</span>
+                    <span class="text-brand-600">{{ item.progress }}%</span>
+                </div>
+                <div class="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-brand-400 to-brand-600 rounded-full transition-all duration-1000" 
+                        style="--progress: {{ item.progress }}%; width: var(--progress);"></div>
+                </div>
+            </div>
+
+            <!-- Simulation -->
+            {% if item.status != 'Selesai' %}
+            <div class="bg-slate-900 rounded-2xl p-4 mb-6 shadow-xl shadow-slate-200">
+                <div class="flex items-center gap-3 mb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    <i class="ph ph-calendar-check text-brand-400"></i>
+                    Rencana Menabung
+                </div>
+                <div class="grid grid-cols-2 gap-4 border-t border-slate-800 pt-4">
+                    <div>
+                        <p class="text-[9px] text-slate-500 font-bold uppercase mb-1">Per Hari</p>
+                        <p class="text-sm font-bold text-white">{{ item.daily_needed|rupiah }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] text-slate-500 font-bold uppercase mb-1">Per Bulan</p>
+                        <p class="text-sm font-bold text-white">{{ item.monthly_needed|rupiah }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Footer Actions -->
+            <div class="flex gap-3">
+                {% if item.status != 'Selesai' %}
+                <button onclick="openUpdateModal('{{ item.obj.id }}', '{{ item.obj.title }}')"
+                    class="flex-1 py-3.5 bg-brand-600 text-white rounded-xl text-sm font-bold hover:bg-brand-700 transition-all active:scale-95 shadow-lg shadow-brand-500/20">
+                    Tambah Tabungan
+                </button>
+                {% else %}
+                <div class="flex-1 py-3.5 bg-emerald-100 text-emerald-700 rounded-xl text-center text-sm font-bold border border-emerald-200">
+                    Target Tercapai!
+                </div>
+                {% endif %}
+                <form action="{{ url_for('delete_wishlist', id=item.obj.id) }}" method="POST" onsubmit="showConfirm(this, 'Hapus target ini?'); return false;">
+                    <button type="submit" class="p-3.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all">
+                        <i class="ph ph-trash text-xl"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="flex flex-col items-center justify-center py-20 bg-white rounded-[3rem] border border-dashed border-slate-200">
+    <div class="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center text-slate-300 mb-6">
+        <i class="ph ph-target text-5xl"></i>
+    </div>
+    <h3 class="text-xl font-bold text-slate-800 mb-2">Belum ada target wishlist</h3>
+    <p class="text-slate-500 mb-8 max-w-sm text-center">Ayo mulai rencanakan barang impianmu atau target finansial masa depanmu!</p>
+    <button onclick="document.getElementById('addWishlistModal').classList.remove('hidden')" 
+        class="bg-brand-600 text-white px-8 py-3.5 rounded-2xl font-bold hover:bg-brand-700 transition-all shadow-xl shadow-brand-500/20">
+        Mulai Buat Target
+    </button>
+</div>
+{% endif %}
+
+<!-- Add Modal -->
+<div id="addWishlistModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+    <div class="bg-white rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl relative">
+        <button onclick="document.getElementById('addWishlistModal').classList.add('hidden')" class="absolute top-6 right-6 text-slate-400 hover:text-slate-600">
+            <i class="ph ph-x text-2xl"></i>
+        </button>
+        <h3 class="text-2xl font-bold text-slate-800 mb-2">Tambah Target Impian 🎯</h3>
+        <p class="text-slate-500 text-sm mb-8">Tentukan targetmu dan mulailah menabung hari ini.</p>
+        
+        <form action="{{ url_for('add_wishlist') }}" method="POST" class="space-y-5">
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">Nama Target</label>
+                <input type="text" name="title" required placeholder="Contoh: Beli Laptop MacBook" 
+                    class="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none transition-all">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Nominal Target</label>
+                    <input type="text" name="target_amount" id="targetAmountInput" required placeholder="Rp 0"
+                        class="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Tabungan Awal</label>
+                    <input type="text" name="current_amount" id="currentAmountInput" value="0"
+                        class="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none transition-all">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">Deadline (Batas Waktu)</label>
+                <input type="date" name="deadline" required
+                    class="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none transition-all">
+            </div>
+            <button type="submit" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 mt-4">
+                Simpan Target
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Update Progress Modal -->
+<div id="updateProgressModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+    <div class="bg-white rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl relative">
+        <button onclick="document.getElementById('updateProgressModal').classList.add('hidden')" class="absolute top-6 right-6 text-slate-400 hover:text-slate-600">
+            <i class="ph ph-x text-2xl"></i>
+        </button>
+        <h3 class="text-xl font-bold text-slate-800 mb-2" id="updateTitle">Tambah Tabungan</h3>
+        <p class="text-slate-500 text-sm mb-8">Berapa banyak yang ingin kamu tambahkan hari ini?</p>
+        
+        <form id="updateProgressForm" method="POST" class="space-y-5">
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">Jumlah Tambahan</label>
+                <div class="relative">
+                    <span class="absolute left-5 top-1/2 -translate-y-1/2 font-bold text-slate-400">Rp</span>
+                    <input type="text" name="amount" id="addAmountInput" required placeholder="0" autofocus
+                        class="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none transition-all text-brand-600">
+                </div>
+            </div>
+            <button type="submit" class="w-full py-4 bg-brand-600 text-white rounded-2xl font-bold hover:bg-brand-700 transition-all shadow-xl shadow-brand-500/20">
+                Konfirmasi Tabungan
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+function openUpdateModal(id, title) {
+    document.getElementById('updateTitle').innerText = title;
+    document.getElementById('updateProgressForm').action = '/update_wishlist_progress/' + id;
+    document.getElementById('updateProgressModal').classList.remove('hidden');
+}
+
+// Auto format Rupiah function
+function formatRupiah(e) {
+    let val = e.target.value.replace(/[^,\d]/g, '');
+    if (val) {
+        e.target.value = parseInt(val, 10).toLocaleString('id-ID');
+    } else {
+        e.target.value = '';
+    }
+}
+
+// Attach listeners
+document.getElementById('targetAmountInput').addEventListener('keyup', formatRupiah);
+document.getElementById('currentAmountInput').addEventListener('keyup', formatRupiah);
+document.getElementById('addAmountInput').addEventListener('keyup', formatRupiah);
+</script>
+{% endblock %}

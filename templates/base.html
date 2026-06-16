@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ManageU - Manajemen Keuangan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="text-slate-800 antialiased overflow-x-hidden">
+    <div id="flash-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="toast-enter px-4 py-3 rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 flex items-center gap-4 w-80 bg-white/90 backdrop-blur-md cursor-pointer" onclick="this.remove()">
+                        {% if category == 'success' %}
+                            <div class="w-10 h-10 rounded-full bg-emerald-100 flex-shrink-0 flex items-center justify-center text-emerald-600">
+                                <i class="ph ph-check-circle text-2xl"></i>
+                            </div>
+                        {% else %}
+                            <div class="w-10 h-10 rounded-full bg-rose-100 flex-shrink-0 flex items-center justify-center text-rose-600">
+                                <i class="ph ph-warning-circle text-2xl"></i>
+                            </div>
+                        {% endif %}
+                        <div class="flex flex-col">
+                            <span class="text-sm font-semibold text-slate-800">{{ 'Berhasil' if category == 'success' else 'Perhatian' }}</span>
+                            <span class="text-xs text-slate-500">{{ message }}</span>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    {% if current_user.is_authenticated %}
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white border-r border-slate-100 hidden md:flex flex-col shadow-soft z-20">
+            <div class="h-20 flex items-center px-6 border-b border-slate-50">
+                <i class="ph-fill ph-leaf text-3xl text-brand-500 mr-2"></i>
+                <span class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-brand-600 to-emerald-400">ManageU</span>
+            </div>
+            <div class="p-4 flex-1">
+                <ul class="space-y-1">
+                    <li>
+                        <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm {% if request.endpoint == 'dashboard' %}bg-brand-50 text-brand-600 font-semibold shadow-sm{% else %}text-slate-500 hover:bg-slate-50 hover:text-slate-800{% endif %} transition-all">
+                            <i class="ph-duotone ph-house-line text-xl"></i>
+                            Ringkasan
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('history') }}" class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm {% if request.endpoint == 'history' %}bg-brand-50 text-brand-600 font-semibold shadow-sm{% else %}text-slate-500 hover:bg-slate-50 hover:text-slate-800{% endif %} transition-all">
+                            <i class="ph-duotone ph-clock-counter-clockwise text-xl"></i>
+                            Riwayat Histori
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('report') }}" class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm {% if request.endpoint == 'report' %}bg-brand-50 text-brand-600 font-semibold shadow-sm{% else %}text-slate-500 hover:bg-slate-50 hover:text-slate-800{% endif %} transition-all">
+                            <i class="ph-duotone ph-chart-line-up text-xl"></i>
+                            Laporan Keuangan
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('wishlist') }}" class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm {% if request.endpoint == 'wishlist' %}bg-brand-50 text-brand-600 font-semibold shadow-sm{% else %}text-slate-500 hover:bg-slate-50 hover:text-slate-800{% endif %} transition-all">
+                            <i class="ph-duotone ph-target text-xl"></i>
+                            Wishlist & Target
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('education') }}" class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm {% if request.endpoint == 'education' %}bg-brand-50 text-brand-600 font-semibold shadow-sm{% else %}text-slate-500 hover:bg-slate-50 hover:text-slate-800{% endif %} transition-all">
+                            <i class="ph-duotone ph-student text-xl"></i>
+                            Tips &amp; Edukasi
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('profile') }}" class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm {% if request.endpoint == 'profile' %}bg-brand-50 text-brand-600 font-semibold shadow-sm{% else %}text-slate-500 hover:bg-slate-50 hover:text-slate-800{% endif %} transition-all">
+                            <i class="ph-duotone ph-user text-xl"></i>
+                            Profil Saya
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="p-4 border-t border-slate-50">
+                <a href="{{ url_for('profile') }}" class="flex items-center gap-3 px-4 py-3 mb-2 group cursor-pointer hover:no-underline">
+                    <div class="w-10 h-10 rounded-full border-2 border-brand-100 overflow-hidden bg-brand-50 flex items-center justify-center font-bold text-brand-600 shadow-sm transition-transform group-hover:scale-105">
+                        {% if current_user.profile_image and current_user.profile_image != 'default.png' %}
+                            <img src="{{ url_for('static', filename='uploads/profiles/' + current_user.profile_image) }}" alt="P" class="w-full h-full object-cover">
+                        {% else %}
+                            {{ current_user.name[0]|upper }}
+                        {% endif %}
+                    </div>
+                    <div class="flex flex-col overflow-hidden">
+                        <span class="text-sm font-semibold truncate text-slate-900 group-hover:text-brand-600 transition-colors">{{ current_user.name }}</span>
+                        <span class="text-xs text-slate-400 truncate">{{ current_user.email }}</span>
+                    </div>
+                </a>
+                <a href="{{ url_for('logout') }}" class="flex items-center justify-center gap-2 px-4 py-2 mt-2 text-sm text-rose-500 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors font-medium">
+                    <i class="ph ph-sign-out text-lg"></i>
+                    Keluar Sesi
+                </a>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col h-full bg-[#f8fafc] relative">
+            <!-- Header for Mobile -->
+            <header class="h-16 bg-white/80 backdrop-blur-md border-b border-slate-100 md:hidden flex items-center justify-between px-6 z-10 sticky top-0">
+                <div class="flex items-center gap-2">
+                    <i class="ph-fill ph-leaf text-2xl text-brand-500"></i>
+                    <span class="font-bold text-lg">ManageU</span>
+                </div>
+                <button id="mobileMenuBtn" class="text-slate-500">
+                    <i class="ph ph-list text-2xl"></i>
+                </button>
+            </header>
+            
+            <main class="flex-1 overflow-y-auto p-4 md:p-8 relative">
+                <div class="max-w-6xl mx-auto">
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+        </div>
+    </div>
+    {% else %}
+        {% block public_content %}{% endblock %}
+    {% endif %}
+
+    <!-- ===================== PREMIUM CONFIRM MODAL ===================== -->
+    <style>
+        #confirmModal {
+            font-family: 'Inter', sans-serif;
+        }
+        .confirm-card {
+            background: #fff;
+            border-radius: 2.5rem;
+            box-shadow: 0 32px 80px -12px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.04);
+            animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+            position: relative;
+            overflow: hidden;
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.85) translateY(24px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .confirm-overlay-enter {
+            animation: overlayIn 0.25s ease-out both;
+        }
+        @keyframes overlayIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+        .confirm-overlay-leave {
+            animation: overlayOut 0.2s ease-in both;
+        }
+        @keyframes overlayOut {
+            from { opacity: 1; }
+            to   { opacity: 0; }
+        }
+        .confirm-card-leave {
+            animation: popOut 0.2s ease-in both;
+        }
+        @keyframes popOut {
+            from { opacity: 1; transform: scale(1) translateY(0); }
+            to   { opacity: 0; transform: scale(0.92) translateY(12px); }
+        }
+        .icon-ring {
+            animation: iconPulse 2s ease-in-out infinite;
+        }
+        @keyframes iconPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.15); }
+            50%       { transform: scale(1.06); box-shadow: 0 0 0 14px rgba(239, 68, 68, 0); }
+        }
+        .confirm-btn-hapus {
+            background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+            box-shadow: 0 8px 24px -4px rgba(244, 63, 94, 0.45);
+            transition: all 0.2s ease;
+        }
+        .confirm-btn-hapus:hover {
+            background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+            box-shadow: 0 12px 28px -4px rgba(244, 63, 94, 0.55);
+            transform: translateY(-1px);
+        }
+        .confirm-btn-hapus:active { transform: scale(0.96); }
+        .confirm-btn-batal {
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            transition: all 0.2s ease;
+        }
+        .confirm-btn-batal:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+        }
+        .confirm-btn-batal:active { transform: scale(0.96); }
+        .confirm-deco {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+    </style>
+
+    <div id="confirmModal" style="display:none; position:fixed; inset:0; z-index:9999; align-items:center; justify-content:center; padding:1rem;">
+        <!-- Backdrop -->
+        <div id="confirmBackdrop" style="position:absolute; inset:0; background:rgba(15,23,42,0.55); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);"></div>
+
+        <!-- Card -->
+        <div class="confirm-card" id="confirmCard" style="width:100%; max-width:400px; padding:2.5rem 2rem 2rem; position:relative; z-index:1; text-align:center;">
+            <!-- Decorative blobs -->
+            <div class="confirm-deco" style="width:180px;height:180px;background:radial-gradient(circle,rgba(254,205,211,0.5),transparent 70%);top:-60px;right:-60px;"></div>
+            <div class="confirm-deco" style="width:120px;height:120px;background:radial-gradient(circle,rgba(253,164,175,0.3),transparent 70%);bottom:-30px;left:-30px;"></div>
+
+            <!-- Icon -->
+            <div class="icon-ring" style="width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,#fff1f2,#ffe4e6);display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;">
+                <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#fda4af,#f43f5e);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px -4px rgba(244,63,94,0.4);">
+                    <i class="ph-duotone ph-trash" style="font-size:1.8rem;color:#fff;"></i>
+                </div>
+            </div>
+
+            <!-- Text -->
+            <h3 id="confirmTitle" style="font-size:1.4rem;font-weight:800;color:#0f172a;margin-bottom:0.5rem;letter-spacing:-0.02em;">Konfirmasi Hapus</h3>
+            <p id="confirmMessage" style="color:#64748b;font-size:0.9rem;line-height:1.7;margin-bottom:2rem;max-width:280px;margin-left:auto;margin-right:auto;">Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.</p>
+
+            <!-- Divider -->
+            <div style="height:1px;background:linear-gradient(90deg,transparent,#e2e8f0,transparent);margin-bottom:1.5rem;"></div>
+
+            <!-- Buttons -->
+            <div style="display:flex;gap:0.75rem;">
+                <button onclick="closeConfirmModal()" class="confirm-btn-batal" style="flex:1;padding:0.9rem;border-radius:1rem;font-weight:700;font-size:0.9rem;color:#475569;cursor:pointer;">
+                    <i class="ph ph-x" style="margin-right:4px;"></i> Batal
+                </button>
+                <button id="confirmSubmitBtn" class="confirm-btn-hapus" style="flex:1;padding:0.9rem;border-radius:1rem;font-weight:700;font-size:0.9rem;color:#fff;cursor:pointer;border:none;">
+                    <i class="ph ph-trash" style="margin-right:4px;"></i> Hapus
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // -------- Toast Auto-hide --------
+        setTimeout(() => {
+            document.querySelectorAll('.toast-enter').forEach(toast => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.5s ease';
+                setTimeout(() => toast.remove(), 500);
+            });
+        }, 4000);
+
+        // -------- Custom Confirmation Modal --------
+        let currentFormToSubmit = null;
+
+        function showConfirm(form, message, title) {
+            currentFormToSubmit = form;
+            document.getElementById('confirmMessage').innerText = message || 'Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.';
+            document.getElementById('confirmTitle').innerText = title || 'Konfirmasi Hapus';
+
+            const modal = document.getElementById('confirmModal');
+            const card  = document.getElementById('confirmCard');
+            const backdrop = document.getElementById('confirmBackdrop');
+
+            modal.style.display = 'flex';
+
+            // Reset & replay animation
+            card.classList.remove('confirm-card-leave');
+            card.style.animation = 'none';
+            card.offsetHeight; // reflow
+            card.style.animation = '';
+
+            backdrop.classList.remove('confirm-overlay-leave');
+            backdrop.classList.add('confirm-overlay-enter');
+        }
+
+        function closeConfirmModal() {
+            const modal = document.getElementById('confirmModal');
+            const card  = document.getElementById('confirmCard');
+            const backdrop = document.getElementById('confirmBackdrop');
+
+            card.classList.add('confirm-card-leave');
+            backdrop.classList.remove('confirm-overlay-enter');
+            backdrop.classList.add('confirm-overlay-leave');
+
+            setTimeout(() => {
+                modal.style.display = 'none';
+                card.classList.remove('confirm-card-leave');
+                backdrop.classList.remove('confirm-overlay-leave');
+            }, 220);
+        }
+
+        document.getElementById('confirmSubmitBtn').addEventListener('click', () => {
+            if (currentFormToSubmit) {
+                // Add loading state
+                const btn = document.getElementById('confirmSubmitBtn');
+                btn.innerHTML = '<i class="ph ph-circle-notch" style="animation:spin 0.8s linear infinite;display:inline-block;margin-right:4px;"></i> Menghapus...';
+                btn.disabled = true;
+                currentFormToSubmit.submit();
+            }
+        });
+
+        // Close on backdrop click
+        document.getElementById('confirmModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('confirmModal') || e.target === document.getElementById('confirmBackdrop')) {
+                closeConfirmModal();
+            }
+        });
+
+        // Keyboard ESC to close
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.getElementById('confirmModal').style.display === 'flex') {
+                closeConfirmModal();
+            }
+        });
+    </script>
+
+    <style>
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

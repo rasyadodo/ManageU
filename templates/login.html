@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block public_content %}
+<div class="min-h-screen flex">
+    <!-- Left: Illustration / Banner (Hidden on Mobile) -->
+    <div class="hidden lg:flex w-1/2 bg-slate-900 p-12 flex-col justify-between relative overflow-hidden">
+        <!-- Abstract Background -->
+        <div class="absolute inset-0 opacity-20">
+            <div class="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full bg-brand-500 blur-[100px]"></div>
+            <div class="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] rounded-full bg-blue-500 blur-[100px]"></div>
+        </div>
+        
+        <div class="relative z-10 flex items-center gap-2">
+            <a href="{{ url_for('index') }}" class="flex items-center gap-2">
+                <i class="ph-fill ph-leaf text-3xl text-brand-400"></i>
+                <span class="text-2xl font-bold text-white">ManageU</span>
+            </a>
+        </div>
+        
+        <div class="relative z-10">
+            <h2 class="text-4xl md:text-5xl font-bold text-white leading-tight mb-6">
+                Selamat Datang Kembali!
+            </h2>
+            <p class="text-slate-400 text-lg max-w-md">
+                Lanjutkan perjalanan menata masa depan finansialmu. Setiap langkah kecil sangat berarti.
+            </p>
+        </div>
+        
+        <div class="relative z-10 text-slate-500 text-sm">
+            &copy; 2026 ManageU Dashboard
+        </div>
+    </div>
+    
+    <!-- Right: Form -->
+    <div class="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12 relative bg-white">
+        <!-- Mobile Logo -->
+        <a href="{{ url_for('index') }}" class="absolute top-6 left-6 flex items-center gap-2 lg:hidden">
+            <i class="ph-fill ph-leaf text-2xl text-brand-500"></i>
+            <span class="text-xl font-bold text-slate-800">ManageU</span>
+        </a>
+        
+        <div class="w-full max-w-md animate-fade-in">
+            <div class="mb-10 text-center lg:text-left">
+                <h1 class="text-3xl font-bold text-slate-900 mb-3 tracking-tight">Masuk ke Akunmu</h1>
+                <p class="text-slate-500">Silakan masukkan email dan password untuk melanjutkan.</p>
+            </div>
+            
+            <form action="{{ url_for('login') }}" method="POST" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Email Address</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                            <i class="ph ph-envelope-simple text-lg"></i>
+                        </div>
+                        <input type="email" name="email" required
+                            class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all outline-none"
+                            placeholder="nama@email.com">
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-medium text-slate-700">Password</label>
+                    </div>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                            <i class="ph ph-lock-key text-lg"></i>
+                        </div>
+                        <input type="password" name="password" required
+                            class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all outline-none"
+                            placeholder="••••••••">
+                    </div>
+                </div>
+                
+                <button type="submit" 
+                    class="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-semibold shadow-lg shadow-slate-900/20 transition-all hover:-translate-y-0.5 active:translate-y-0">
+                    Masuk Sekarang
+                </button>
+            </form>
+            
+            <p class="mt-8 text-center text-slate-500">
+                Belum punya akun? <a href="{{ url_for('register') }}" class="font-semibold text-brand-600 hover:text-brand-500 transition-colors">Daftar disini</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .animate-fade-in {
+        animation: fadeIn 0.5s ease-out forwards;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}

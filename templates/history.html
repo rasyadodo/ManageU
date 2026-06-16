@@ -1,0 +1,289 @@
+{% extends 'base.html' %}
+{% block header_title %}Riwayat Transaksi{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+    <div>
+        <h2 class="text-xl font-bold text-slate-800">Semua Transaksi</h2>
+        <p class="text-slate-500 text-sm mt-1">Kelola dan lihat detail riwayat keuanganmu secara terpisah.</p>
+    </div>
+    
+    <form action="{{ url_for('history') }}" method="GET" class="flex w-full md:w-auto gap-3">
+        <select name="month" class="flex-1 bg-white border border-slate-200 text-slate-700 text-sm rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none shadow-sm">
+            <option value="">Semua Waktu</option>
+            <option value="{{ current_time.year }}-{{ '%02d' | format(current_time.month) }}" {% if request.args.get('month') == current_time.year|string ~ '-' ~ ('%02d' | format(current_time.month)) %}selected{% endif %}>Bulan Ini</option>
+            <option value="{{ current_time.year }}-{{ '%02d' | format(current_time.month - 1 if current_time.month > 1 else 12) }}" {% if request.args.get('month') == current_time.year|string ~ '-' ~ ('%02d' | format(current_time.month - 1 if current_time.month > 1 else 12)) %}selected{% endif %}>Bulan Lalu</option>
+        </select>
+        <button type="submit" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-medium transition-colors shadow-lg shadow-slate-900/20">
+            Terapkan Filter
+        </button>
+    </form>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Pemasukan Section -->
+    <div class="flex flex-col">
+        <h3 class="text-lg font-bold text-emerald-600 mb-3 flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                <i class="ph-fill ph-trend-up"></i>
+            </div>
+            Pemasukan
+        </h3>
+        <div class="flex flex-col space-y-4">
+            {% set ns_in = namespace(has_data=false) %}
+            {% for group in grouped_pemasukan %}
+            {% set ns_in.has_data = true %}
+            <div class="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
+                <div class="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-emerald-50/30">
+                    <h4 class="font-semibold text-slate-800 text-sm flex items-center gap-2">
+                        <i class="ph ph-calendar-blank text-emerald-500"></i>
+                        {{ group.date.strftime('%d %B %Y') }}
+                    </h4>
+                    <span class="text-sm font-bold text-emerald-600">+{{ group.daily_total|rupiah }}</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <tbody>
+                            {% for t in group.transactions %}
+                            <tr class="border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors group">
+                                <td class="py-3 px-5">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl flex-shrink-0">
+                                            <i class="ph-duotone ph-hand-coins"></i>
+                                        </div>
+                                        <span class="font-medium text-slate-800 text-sm">{{ t.title }}</span>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-5 text-sm text-right font-medium text-emerald-600 whitespace-nowrap">
+                                    +{{ t.amount|rupiah }}
+                                </td>
+                                <td class="py-3 px-5 w-20 text-center">
+                                    <div class="flex items-center justify-center gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button onclick="openEditModal('{{ t.id }}', '{{ t.title }}', '{{ t.amount|int }}', '{{ t.type }}', '{{ t.date }}')" class="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
+                                            <i class="ph ph-pencil-simple text-sm"></i>
+                                        </button>
+                                        <form action="{{ url_for('delete_transaction', trans_id=t.id) }}" method="POST" class="inline" onsubmit="showConfirm(this, 'Hapus transaksi pemasukan ini?'); return false;">
+                                            <button type="submit" class="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors" title="Hapus">
+                                                <i class="ph ph-trash text-sm"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+            
+            {% if not ns_in.has_data %}
+            <div class="bg-white rounded-2xl shadow-soft border border-slate-100 flex-1 flex flex-col items-center justify-center p-10 text-center min-h-[300px]">
+                <div class="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-4">
+                    <i class="ph ph-receipt text-2xl text-slate-400"></i>
+                </div>
+                <p class="text-slate-500 font-medium">Belum ada pemasukan.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pengeluaran Section -->
+    <div class="flex flex-col">
+        <h3 class="text-lg font-bold text-rose-600 mb-3 flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
+                <i class="ph-fill ph-trend-down"></i>
+            </div>
+            Pengeluaran
+        </h3>
+        <div class="flex flex-col space-y-4">
+            {% set ns_out = namespace(has_data=false) %}
+            {% for group in grouped_pengeluaran %}
+            {% set ns_out.has_data = true %}
+            <div class="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
+                <div class="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-rose-50/30">
+                    <h4 class="font-semibold text-slate-800 text-sm flex items-center gap-2">
+                        <i class="ph ph-calendar-blank text-rose-500"></i>
+                        {{ group.date.strftime('%d %B %Y') }}
+                    </h4>
+                    <span class="text-sm font-bold text-rose-600">-{{ group.daily_total|rupiah }}</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <tbody>
+                            {% for t in group.transactions %}
+                            <tr class="border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors group">
+                                <td class="py-3 px-5">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0
+                                            {% if t.category == 'Jajan' %}bg-amber-50 text-amber-600
+                                            {% elif t.category == 'Paket Bulanan' %}bg-blue-50 text-blue-600
+                                            {% elif t.category == 'Makan' %}bg-rose-50 text-rose-600
+                                            {% elif t.category == 'Belanja' %}bg-indigo-50 text-indigo-600
+                                            {% elif t.category == 'Transport' %}bg-cyan-50 text-cyan-600
+                                            {% else %}bg-slate-50 text-slate-600{% endif %}">
+                                            <i class="ph-duotone 
+                                                {% if t.category == 'Jajan' %}ph-cookie
+                                                {% elif t.category == 'Paket Bulanan' %}ph-broadcast
+                                                {% elif t.category == 'Makan' %}ph-fork-knife
+                                                {% elif t.category == 'Belanja' %}ph-shopping-bag
+                                                {% elif t.category == 'Transport' %}ph-jeep
+                                                {% else %}ph-tag{% endif %}"></i>
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <span class="font-medium text-slate-800 text-sm">{{ t.title }}</span>
+                                            {% if t.category %}
+                                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{{ t.category }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-5 text-sm text-right font-medium text-slate-800 whitespace-nowrap">
+                                    -{{ t.amount|rupiah }}
+                                </td>
+                                <td class="py-3 px-5 w-20 text-center">
+                                    <div class="flex items-center justify-center gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button onclick="openEditModal('{{ t.id }}', '{{ t.title }}', '{{ t.amount|int }}', '{{ t.type }}', '{{ t.date }}')" class="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
+                                            <i class="ph ph-pencil-simple text-sm"></i>
+                                        </button>
+                                        <form action="{{ url_for('delete_transaction', trans_id=t.id) }}" method="POST" class="inline" onsubmit="showConfirm(this, 'Hapus transaksi pengeluaran ini?'); return false;">
+                                            <button type="submit" class="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors" title="Hapus">
+                                                <i class="ph ph-trash text-sm"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+            
+            {% if not ns_out.has_data %}
+            <div class="bg-white rounded-2xl shadow-soft border border-slate-100 flex-1 flex flex-col items-center justify-center p-10 text-center min-h-[300px]">
+                <div class="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-4">
+                    <i class="ph ph-receipt text-2xl text-slate-400"></i>
+                </div>
+                <p class="text-slate-500 font-medium">Belum ada pengeluaran.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Edit Transaction Modal -->
+<div id="editTransactionModal" class="modal-overlay fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex-col items-center justify-center p-4" data-state="closed">
+    <div class="modal-content bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden" data-state="closed">
+        <div class="flex items-center justify-between p-6 border-b border-slate-100">
+            <h3 class="text-xl font-bold text-slate-800">Edit Transaksi</h3>
+            <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                <i class="ph ph-x text-2xl"></i>
+            </button>
+        </div>
+        <form id="editForm" method="POST" action="" class="p-6">
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Jenis Transaksi</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="type" value="pengeluaran" id="editTypeOut" class="peer sr-only">
+                            <div class="py-2.5 text-center border text-slate-600 border-slate-200 rounded-xl peer-checked:border-rose-500 peer-checked:bg-rose-50 peer-checked:text-rose-600 font-medium hover:bg-slate-50 transition-all">
+                                Pengeluaran
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="type" value="pemasukan" id="editTypeIn" class="peer sr-only">
+                            <div class="py-2.5 text-center border text-slate-600 border-slate-200 rounded-xl peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 font-medium hover:bg-slate-50 transition-all">
+                                Pemasukan
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Nama Transaksi</label>
+                    <input type="text" name="title" id="editTitle" required
+                        class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Jumlah (Rp)</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 font-medium">Rp</div>
+                        <input type="text" name="amount" id="editAmount" required
+                            class="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none font-medium">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Tanggal</label>
+                    <input type="date" name="date" id="editDate" required
+                        class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-slate-600">
+                </div>
+            </div>
+            
+            <div class="mt-8 flex gap-3">
+                <button type="button" onclick="closeEditModal()" class="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-all">
+                    Batal
+                </button>
+                <button type="submit" class="flex-1 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/20 transition-all">
+                    Simpan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const editModal = document.getElementById('editTransactionModal');
+    const editModalContent = editModal.querySelector('.modal-content');
+    
+    // Auto format Rupiah di modal Edit
+    const editAmountInput = document.getElementById('editAmount');
+    editAmountInput.addEventListener('keyup', function(e) {
+        let val = this.value.replace(/[^,\d]/g, '');
+        if (val) {
+            this.value = parseInt(val, 10).toLocaleString('id-ID');
+        } else {
+            this.value = '';
+        }
+    });
+
+    function openEditModal(id, title, amount, type, date) {
+        // Set Action Form Method URL
+        document.getElementById('editForm').action = '/edit_transaction/' + id;
+        
+        // Populate inputs
+        document.getElementById('editTitle').value = title;
+        document.getElementById('editAmount').value = parseInt(amount, 10).toLocaleString('id-ID');
+        document.getElementById('editDate').value = date;
+        
+        if (type === 'pemasukan') {
+            document.getElementById('editTypeIn').checked = true;
+        } else {
+            document.getElementById('editTypeOut').checked = true;
+        }
+        
+        editModal.style.display = 'flex';
+        editModal.setAttribute('data-state', 'open');
+        editModalContent.setAttribute('data-state', 'open');
+    }
+    
+    function closeEditModal() {
+        editModal.setAttribute('data-state', 'closed');
+        editModalContent.setAttribute('data-state', 'closed');
+        setTimeout(() => {
+            editModal.style.display = 'none';
+        }, 200);
+    }
+
+    editModal.addEventListener('click', (e) => {
+        if (e.target === editModal) closeEditModal();
+    });
+</script>
+{% endblock %}

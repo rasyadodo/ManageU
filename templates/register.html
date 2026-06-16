@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block public_content %}
+<div class="min-h-screen flex">
+    <!-- Left: Illustration / Banner (Hidden on Mobile) -->
+    <div
+        class="hidden lg:flex w-1/2 bg-slate-50 p-12 flex-col justify-between relative overflow-hidden border-r border-slate-200">
+        <!-- Abstract Background -->
+        <div class="absolute inset-0 opacity-30">
+            <div class="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full bg-emerald-300 blur-[120px]"></div>
+            <div class="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] rounded-full bg-brand-300 blur-[120px]">
+            </div>
+        </div>
+
+        <div class="relative z-10 flex items-center gap-2">
+            <a href="{{ url_for('index') }}" class="flex items-center gap-2">
+                <i class="ph-fill ph-leaf text-3xl text-brand-600"></i>
+                <span
+                    class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-brand-600 to-emerald-500">ManageU</span>
+            </a>
+        </div>
+
+        <div class="relative z-10">
+            <div class="inline-flex items-center justify-center p-4 bg-white rounded-2xl shadow-soft mb-8">
+                <i class="ph-fill ph-chart-polar text-5xl text-brand-500"></i>
+            </div>
+            <h2 class="text-4xl md:text-5xl font-bold text-slate-800 leading-tight mb-6">
+                Awali Perjalanan Finansialmu Bersama Kami
+            </h2>
+            <p class="text-slate-500 text-lg max-w-md">
+                Bergabung dengan mahasiswa lainnya dan mulai atur keuangan lebih modern, praktis, dan efektif hari ini.
+            </p>
+        </div>
+
+        <div class="relative z-10 text-slate-400 text-sm">
+            &copy; 2026 ManageU Dashboard
+        </div>
+    </div>
+
+    <!-- Right: Form -->
+    <div class="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12 relative bg-white">
+        <!-- Mobile Logo -->
+        <a href="{{ url_for('index') }}" class="absolute top-6 left-6 flex items-center gap-2 lg:hidden">
+            <i class="ph-fill ph-leaf text-2xl text-brand-500"></i>
+            <span class="text-xl font-bold text-slate-800">ManageU</span>
+        </a>
+
+        <div class="w-full max-w-md animate-fade-in mt-10 md:mt-0">
+            <div class="mb-8 text-center lg:text-left">
+                <h1 class="text-3xl font-bold text-slate-900 mb-3 tracking-tight">Buat Akun Baru</h1>
+                <p class="text-slate-500">Hanya butuh beberapa detik untuk mulai mencatat keuangan.</p>
+            </div>
+
+            <form action="{{ url_for('register') }}" method="POST" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Nama Lengkap</label>
+                    <div class="relative">
+                        <div
+                            class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                            <i class="ph ph-user text-lg"></i>
+                        </div>
+                        <input type="text" name="name" required
+                            class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all outline-none"
+                            placeholder="Nama">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Email Address</label>
+                    <div class="relative">
+                        <div
+                            class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                            <i class="ph ph-envelope-simple text-lg"></i>
+                        </div>
+                        <input type="email" name="email" required
+                            class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all outline-none"
+                            placeholder="nama@email.com">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Password</label>
+                    <div class="relative">
+                        <div
+                            class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                            <i class="ph ph-lock-key text-lg"></i>
+                        </div>
+                        <input type="password" name="password" required minlength="6"
+                            class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all outline-none"
+                            placeholder="Minimal 6 karakter">
+                    </div>
+                </div>
+
+                <button type="submit"
+                    class="w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-semibold shadow-lg shadow-brand-500/30 transition-all hover:-translate-y-0.5 active:translate-y-0 mt-4">
+                    Daftar Akun
+                </button>
+            </form>
+
+            <p class="mt-8 text-center text-slate-500">
+                Sudah punya akun? <a href="{{ url_for('login') }}"
+                    class="font-semibold text-slate-900 hover:text-brand-600 transition-colors">Masuk di sini</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .animate-fade-in {
+        animation: fadeIn 0.5s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}
