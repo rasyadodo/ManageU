@@ -16,8 +16,12 @@ app.config['SECRET_KEY'] = 'your_super_secret_key_123'
 
 # Konfigurasi Database SQLite
 basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + \
-    os.path.join(basedir, 'instance', 'database.db')
+if os.environ.get('VERCEL'):
+    db_path = '/tmp/database.db'
+else:
+    db_path = os.path.join(basedir, 'instance', 'database.db')
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Inisialisasi Ekstensi
